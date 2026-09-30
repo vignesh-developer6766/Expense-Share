@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications — ExpenseShare AI{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-bell-fill text-primary me-2"></i>Notifications Center</h2>
+        <p class="text-muted mb-0">Stay updated on group activity, settlements, and bill reminders</p>
+    </div>
+    {% if notifications %}
+    <form method="POST" action="{{ url_for('notifications.mark_all_read') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-outline-secondary btn-sm"><i class="bi bi-check2-all me-1"></i> Mark All as Read</button>
+    </form>
+    {% endif %}
+</div>
+
+{% if notifications %}
+<div class="list-group mb-4">
+    {% for notif in notifications %}
+    <div class="list-group-item p-3 mb-2 rounded-3 border d-flex justify-content-between align-items-start {% if not notif.is_read %}bg-primary-subtle border-primary-subtle{% else %}bg-white{% endif %}">
+        <div class="d-flex align-items-start">
+            <div class="me-3 fs-4">
+                {% if notif.type == 'settlement' %}
+                <i class="bi bi-arrow-left-right text-success"></i>
+                {% elif notif.type == 'reminder' %}
+                <i class="bi bi-clock-history text-warning"></i>
+                {% elif notif.type == 'warning' %}
+                <i class="bi bi-exclamation-triangle text-danger"></i>
+                {% else %}
+                <i class="bi bi-info-circle text-primary"></i>
+                {% endif %}
+            </div>
+            <div>
+                <h6 class="fw-bold mb-1 text-dark">{{ notif.title }}</h6>
+                <p class="mb-1 text-secondary small">{{ notif.message }}</p>
+                <span class="text-muted small"><i class="bi bi-calendar3 me-1"></i> {{ notif.created_at.strftime('%d %b %Y, %I:%M %p') }}</span>
+            </div>
+        </div>
+        <div>
+            {% if not notif.is_read %}
+            <form method="POST" action="{{ url_for('notifications.mark_read', notification_id=notif.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-sm btn-outline-primary py-0 px-2" title="Mark as Read"><i class="bi bi-check-lg"></i></button>
+            </form>
+            {% else %}
+            <span class="badge bg-light text-muted border">Read</span>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card card-custom text-center p-5 my-4">
+    <i class="bi bi-bell-slash text-muted display-4 mb-3"></i>
+    <h4>No Notifications Yet</h4>
+    <p class="text-muted">You are all caught up! New group alerts and settlement confirmations will appear here.</p>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}User Management — ExpenseShare AI{% endblock %}
+
+{% block page_title %}User Management{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <div>
+        <h3 class="fw-bold text-dark mb-1"><i class="bi bi-people-fill text-primary me-2"></i>User Management</h3>
+        <p class="text-muted mb-0">View, edit, and manage all registered user accounts in ExpenseShare AI.</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 fs-6 rounded-pill">
+            <i class="bi bi-person-check-fill me-1"></i> {{ users|length }} Total Users
+        </span>
+    </div>
+</div>
+
+<div class="card card-custom p-4">
+    <div class="table-responsive">
+        <table class="table table-custom align-middle">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Email Address</th>
+                    <th>Joined Date</th>
+                    <th>Groups</th>
+                    <th>Expenses Paid</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for udata in users %}
+                {% set u = udata.user %}
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="avatar-circle flex-shrink-0" style="width: 42px; height: 42px; font-size: 1rem;">
+                                {{ u.name[:1].upper() }}
+                            </div>
+                            <div>
+                                <div class="fw-bold text-dark mb-0">
+                                    {{ u.name }}
+                                    {% if u.id == current_user.id %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle ms-1">You</span>
+                                    {% endif %}
+                                </div>
+                                <span class="small text-muted">ID: #{{ u.id }}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="fw-semibold text-secondary">{{ u.email }}</span>
+                    </td>
+                    <td class="small text-muted">
+                        {{ u.created_at.strftime('%b %d, %Y') if u.created_at else 'N/A' }}
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark border"><i class="bi bi-people me-1"></i> {{ udata.group_count }} groups</span>
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark border"><i class="bi bi-receipt me-1"></i> {{ udata.expense_count }} expenses</span>
+                    </td>
+                    <td class="text-end">
+                        <div class="d-inline-flex gap-2">
+                            <a href="{{ url_for('users.edit_user', user_id=u.id) }}" class="btn btn-outline-primary btn-sm px-3 rounded-2 fw-semibold">
+                                <i class="bi bi-pencil-square me-1"></i> Edit
+                            </a>
+
+                            {% if u.id != current_user.id %}
+                            <form method="POST" action="{{ url_for('users.delete_user', user_id=u.id) }}" class="d-inline" onsubmit="return confirm('Are you sure you want to delete user \'{{ u.name }}\'? This action cannot be undone.');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-outline-danger btn-sm px-3 rounded-2 fw-semibold">
+                                    <i class="bi bi-trash3 me-1"></i> Delete
+                                </button>
+                            </form>
+                            {% else %}
+                            <button class="btn btn-light btn-sm px-3 rounded-2 fw-semibold text-muted border" disabled title="Cannot delete current session user">
+                                <i class="bi bi-lock me-1"></i> Active
+                            </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

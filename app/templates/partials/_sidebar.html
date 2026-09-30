@@ -1,0 +1,79 @@
+<!-- Sub-Sidebar Navigation (ExpenseIn Style) -->
+<div class="sidebar-nav">
+    <ul class="nav flex-column">
+        {% if current_user.is_authenticated %}
+        <li class="nav-item">
+            <a href="{{ url_for('dashboard.index') }}" class="nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+                <i class="bi bi-chevron-right me-2 text-muted small"></i> Overview
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ url_for('expenses.list_expenses') }}" class="nav-link {% if 'expenses' in request.endpoint %}active{% endif %}">
+                <i class="bi bi-chevron-right me-2 text-muted small"></i> Expenses
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ url_for('ocr.upload') }}" class="nav-link {% if 'ocr' in request.endpoint %}active{% endif %}">
+                <i class="bi bi-chevron-right me-2 text-muted small"></i> Receipts OCR
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ url_for('groups.list_groups') }}" class="nav-link {% if 'groups' in request.endpoint %}active{% endif %}">
+                <i class="bi bi-chevron-right me-2 text-muted small"></i> Groups
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ url_for('settlements.list_settlements') }}" class="nav-link {% if 'settlements' in request.endpoint %}active{% endif %}">
+                <i class="bi bi-chevron-right me-2 text-muted small"></i> Settlements
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ url_for('analytics.index') }}" class="nav-link {% if 'analytics' in request.endpoint %}active{% endif %}">
+                <i class="bi bi-chevron-right me-2 text-muted small"></i> Reports & Analytics
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ url_for('ai.index') }}" class="nav-link {% if 'ai' in request.endpoint %}active{% endif %}">
+                <i class="bi bi-chevron-right me-2 text-muted small"></i> AI Assistant
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ url_for('recurring.list_recurring') }}" class="nav-link {% if 'recurring' in request.endpoint %}active{% endif %}">
+                <i class="bi bi-chevron-right me-2 text-muted small"></i> Recurring Bills
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ url_for('users.list_users') }}" class="nav-link {% if 'users' in request.endpoint %}active{% endif %}">
+                <i class="bi bi-chevron-right me-2 text-muted small"></i> Users
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ url_for('notifications.list_notifications') }}" class="nav-link d-flex justify-content-between align-items-center {% if 'notifications' in request.endpoint %}active{% endif %}">
+                <span><i class="bi bi-chevron-right me-2 text-muted small"></i> Notifications</span>
+                {% if unread_notification_count > 0 %}
+                <span class="badge bg-danger rounded-pill" style="font-size: 0.7rem;">{{ unread_notification_count }}</span>
+                {% endif %}
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</div>
+
+{% if current_user.is_authenticated %}
+<div class="sidebar-footer bg-light border-top">
+    <div class="d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center me-2 overflow-hidden">
+            <div class="avatar-circle me-2 flex-shrink-0" style="width: 32px; height: 32px; font-size: 0.8rem;">
+                {{ current_user.name[:1].upper() }}
+            </div>
+            <div class="text-truncate">
+                <div class="fw-semibold text-dark text-truncate small">{{ current_user.name }}</div>
+                <div class="text-muted small text-truncate" style="font-size: 0.72rem;">{{ current_user.email }}</div>
+            </div>
+        </div>
+        <a href="{{ url_for('auth.logout') }}" class="btn btn-link text-muted p-1" title="Logout" aria-label="Logout">
+            <i class="bi bi-box-arrow-right fs-5 text-danger"></i>
+        </a>
+    </div>
+</div>
+{% endif %}

@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - SECRET_KEY=production-secure-random-secret-key-12345
+      - FLASK_ENV=production
+      - DATABASE_URL=sqlite:///instance/expenseshare.db
+    volumes:
+      - ./uploads:/app/uploads
+      - ./instance:/app/instance
+    restart: always

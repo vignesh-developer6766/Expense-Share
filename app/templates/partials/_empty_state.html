@@ -1,0 +1,15 @@
+<!-- Reusable Empty State Card -->
+<div class="card card-custom text-center p-5 my-4">
+    <div class="icon-badge-tint mx-auto mb-3" style="width: 60px; height: 60px; font-size: 1.75rem; color: var(--accent); background-color: rgba(59, 130, 246, 0.1);">
+        <i class="bi {{ icon_class | default('bi-inbox-fill') }}"></i>
+    </div>
+    <h4 class="fw-bold mb-2">{{ title | default('No Data Found') }}</h4>
+    <p class="text-muted mx-auto mb-4" style="max-width: 420px;">{{ message | default('There are no items to display right now.') }}</p>
+    {% if cta_url and cta_label %}
+    <div>
+        <a href="{{ cta_url }}" class="btn btn-primary px-4 py-2 rounded-3 fw-semibold">
+            <i class="bi {{ cta_icon | default('bi-plus-lg') }} me-1"></i> {{ cta_label }}
+        </a>
+    </div>
+    {% endif %}
+</div>

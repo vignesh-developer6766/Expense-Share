@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Edit User — ExpenseShare AI{% endblock %}
+
+{% block page_title %}Edit User{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{{ url_for('users.list_users') }}" class="text-decoration-none text-secondary small fw-semibold">
+        <i class="bi bi-arrow-left me-1"></i> Back to Users List
+    </a>
+    <h3 class="fw-bold text-dark mt-2 mb-1"><i class="bi bi-person-gear text-primary me-2"></i>Edit User: {{ target_user.name }}</h3>
+    <p class="text-muted mb-0">Update account details, email address, or reset user password.</p>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card card-custom p-4">
+            <form method="POST" action="{{ url_for('users.edit_user', user_id=target_user.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="mb-3 text-center pb-3 border-bottom">
+                    <div class="avatar-circle mx-auto mb-2" style="width: 64px; height: 64px; font-size: 1.5rem;">
+                        {{ target_user.name[:1].upper() }}
+                    </div>
+                    <h5 class="fw-bold text-dark mb-0">{{ target_user.name }}</h5>
+                    <span class="small text-muted">User ID: #{{ target_user.id }}</span>
+                </div>
+
+                <div class="mb-3">
+                    <label for="name" class="form-label fw-semibold">Full Name</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light text-muted"><i class="bi bi-person"></i></span>
+                        <input type="text" class="form-control" id="name" name="name" value="{{ target_user.name }}" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="email" class="form-label fw-semibold">Email Address</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light text-muted"><i class="bi bi-envelope"></i></span>
+                        <input type="email" class="form-control" id="email" name="email" value="{{ target_user.email }}" required>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="password" class="form-label fw-semibold">New Password <span class="text-muted fw-normal small">(Leave blank to keep unchanged)</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light text-muted"><i class="bi bi-lock"></i></span>
+                        <input type="password" class="form-control" id="password" name="password" placeholder="Enter new password">
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 pt-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1 py-2.5 fw-bold">
+                        <i class="bi bi-check-circle-fill me-1"></i> Save Changes
+                    </button>
+                    <a href="{{ url_for('users.list_users') }}" class="btn btn-outline-secondary py-2.5 px-4">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

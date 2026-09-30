@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+
+{% block title %}Nexus.AI Assistant — ExpenseShare AI{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h3 class="fw-bold mb-0"><i class="bi bi-stars text-primary me-2"></i>Nexus.AI Assistant</h3>
+        <p class="text-muted small mb-0">Conversational AI — ask questions, track debts, or log expenses naturally</p>
+    </div>
+    <div>
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 rounded-pill font-monospace small">
+            <i class="bi bi-circle-fill text-success fs-6 me-1"></i> Nexus 2.0 Active
+        </span>
+    </div>
+</div>
+
+<!-- Suggestion Chips Bar -->
+<div class="d-flex gap-2 flex-wrap mb-3" id="suggestionChips">
+    <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2.5 py-1 small" onclick="sendSuggestedPrompt(this.innerText)">
+        <i class="bi bi-receipt text-primary me-1"></i> I paid ₹1200 for dinner with Alex and Rahul
+    </button>
+    <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2.5 py-1 small" onclick="sendSuggestedPrompt(this.innerText)">
+        <i class="bi bi-wallet2 text-success me-1"></i> Who owes me money right now?
+    </button>
+    <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2.5 py-1 small" onclick="sendSuggestedPrompt(this.innerText)">
+        <i class="bi bi-graph-up-arrow text-info me-1"></i> Show my spending analytics summary
+    </button>
+    <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2.5 py-1 small" onclick="sendSuggestedPrompt(this.innerText)">
+        <i class="bi bi-lightbulb text-warning me-1"></i> Tips to save money on shared trips
+    </button>
+</div>
+
+<!-- Compact Nexus.AI Chat Area -->
+<div class="row g-3">
+    <div class="col-lg-7 col-xl-6 mx-auto">
+        <div class="card card-custom p-0 border shadow-sm flex-column" style="height: 480px; overflow: hidden; border-radius: 16px;">
+            
+            <!-- Chat Header -->
+            <div class="p-2.5 px-3 bg-light border-bottom d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                        <i class="bi bi-cpu-fill fs-6"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-0 small">Nexus.AI Financial Intelligence</h6>
+                        <small class="text-muted" style="font-size: 0.75rem;">Conversational expense & debt assistant</small>
+                    </div>
+                </div>
+
+                <div style="min-width: 150px;">
+                    <select class="form-select form-select-sm py-1 font-monospace small" id="chat_group_id">
+                        {% for group in groups %}
+                        <option value="{{ group.id }}" {% if selected_group_id == group.id %}selected{% endif %}>👥 {{ group.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Chat Message Feed -->
+            <div class="p-3 flex-grow-1 overflow-y-auto" id="chatFeed" style="background-color: #F8FAFC;">
+                
+                <!-- Welcome Nexus.AI Message -->
+                <div class="d-flex gap-2.5 mb-3">
+                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 30px; height: 30px;">
+                        <i class="bi bi-cpu-fill fs-6"></i>
+                    </div>
+                    <div class="bg-white p-2.5 px-3 rounded-4 border shadow-sm" style="max-width: 85%;">
+                        <div class="fw-bold text-primary mb-1 small">Nexus.AI Assistant</div>
+                        <p class="mb-1 small">Hello {{ current_user.name }}! I am **Nexus.AI**, your financial AI assistant. 🤖✨</p>
+                        <p class="mb-0 text-secondary small" style="font-size: 0.8rem;">Ask me about your balances, spending analytics, budgeting tips, or describe an expense to log it instantly!</p>
+                    </div>
+                </div>
+
+                {% if assistant_reply %}
+                <!-- Server-rendered response if POST form was used -->
+                <div class="d-flex gap-2.5 mb-3 justify-content-end">
+                    <div class="bg-primary text-white p-2.5 px-3 rounded-4 shadow-sm" style="max-width: 80%;">
+                        <p class="mb-0 small">{{ prompt_text }}</p>
+                    </div>
+                    <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 30px; height: 30px;">
+                        <i class="bi bi-person-fill fs-6"></i>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2.5 mb-3">
+                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 30px; height: 30px;">
+                        <i class="bi bi-cpu-fill fs-6"></i>
+                    </div>
+                    <div class="bg-white p-2.5 px-3 rounded-4 border shadow-sm" style="max-width: 85%;">
+                        <div class="fw-bold text-primary mb-1.5 small">Nexus.AI Assistant</div>
+                        <div class="chat-text-content mb-2 small" style="white-space: pre-line;">{{ assistant_reply.message }}</div>
+
+                        {% if parsed_result %}
+                        <div class="card card-custom p-2.5 border-primary bg-light mb-1">
+                            <h6 class="fw-bold text-primary mb-1.5 small"><i class="bi bi-lightning-charge-fill me-1"></i>Confirm Expense Entry</h6>
+                            <form method="POST" action="{{ url_for('expenses.create_expense') }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="group_id" value="{{ parsed_result.group_id }}">
+                                <input type="hidden" name="description" value="{{ parsed_result.description }}">
+                                <input type="hidden" name="amount" value="{{ parsed_result.amount }}">
+                                <input type="hidden" name="category" value="{{ parsed_result.category }}">
+                                <input type="hidden" name="paid_by" value="{{ current_user.id }}">
+                                <input type="hidden" name="split_type" value="equal">
+                                {% for m in parsed_result.member_objects %}
+                                <input type="hidden" name="equal_users" value="{{ m.id }}">
+                                {% endfor %}
+
+                                <button type="submit" class="btn btn-success btn-sm fw-bold w-100 py-1.5 small"><i class="bi bi-check-circle me-1"></i> Save Expense (₹{{ "%.2f"|format(parsed_result.amount) }})</button>
+                            </form>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+            </div>
+
+            <!-- Chat Input Bar -->
+            <div class="p-2.5 bg-white border-top">
+                <form id="chatForm" onsubmit="handleChatSubmit(event)">
+                    <div class="input-group">
+                        <input type="text" class="form-control form-control-sm border-end-0 ps-3" id="chatInput" placeholder="Ask Nexus.AI anything or type an expense (e.g. 'Paid 450 for coffee')..." required autocomplete="off">
+                        <button type="submit" class="btn btn-accent btn-sm px-3 fw-bold" id="sendBtn">
+                            <i class="bi bi-send-fill me-1"></i> Ask AI
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+const csrfToken = "{{ csrf_token() }}";
+const currentUserId = {{ current_user.id }};
+
+function sendSuggestedPrompt(text) {
+    document.getElementById('chatInput').value = text;
+    document.getElementById('chatForm').dispatchEvent(new Event('submit'));
+}
+
+function scrollToBottom() {
+    const feed = document.getElementById('chatFeed');
+    feed.scrollTop = feed.scrollHeight;
+}
+
+function formatMarkdownText(text) {
+    if (!text) return '';
+    let formatted = text
+        .replace(/### (.*)/g, '<h6 class="fw-bold text-primary mt-1 mb-1 small">$1</h6>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/• (.*)/g, '<li class="ms-2 small">$1</li>')
+        .replace(/- (.*)/g, '<li class="ms-2 small">$1</li>')
+        .replace(/\n\n/g, '<br><br>')
+        .replace(/\n/g, '<br>');
+    return formatted;
+}
+
+async function handleChatSubmit(e) {
+    e.preventDefault();
+    const input = document.getElementById('chatInput');
+    const groupSelect = document.getElementById('chat_group_id');
+    const sendBtn = document.getElementById('sendBtn');
+    const feed = document.getElementById('chatFeed');
+
+    const message = input.value.trim();
+    const groupId = groupSelect ? parseInt(groupSelect.value) : null;
+
+    if (!message) return;
+
+    // 1. Render User Message Bubble
+    const userBubble = document.createElement('div');
+    userBubble.className = 'd-flex gap-2.5 mb-3 justify-content-end';
+    userBubble.innerHTML = `
+        <div class="bg-primary text-white p-2.5 px-3 rounded-4 shadow-sm" style="max-width: 80%;">
+            <p class="mb-0 small">${escapeHtml(message)}</p>
+        </div>
+        <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 30px; height: 30px;">
+            <i class="bi bi-person-fill fs-6"></i>
+        </div>
+    `;
+    feed.appendChild(userBubble);
+    input.value = '';
+    scrollToBottom();
+
+    // 2. Render Loading Indicator
+    const loadingBubble = document.createElement('div');
+    loadingBubble.id = 'loadingBubble';
+    loadingBubble.className = 'd-flex gap-2.5 mb-3';
+    loadingBubble.innerHTML = `
+        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 30px; height: 30px;">
+            <i class="bi bi-cpu-fill fs-6"></i>
+        </div>
+        <div class="bg-white p-2.5 px-3 rounded-4 border shadow-sm d-flex align-items-center gap-2">
+            <span class="spinner-border spinner-border-sm text-primary" role="status"></span>
+            <span class="text-muted small">Nexus.AI is thinking...</span>
+        </div>
+    `;
+    feed.appendChild(loadingBubble);
+    scrollToBottom();
+
+    sendBtn.disabled = true;
+
+    try {
+        const response = await fetch("{{ url_for('ai.chat') }}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrfToken
+            },
+            body: JSON.stringify({ message: message, group_id: groupId })
+        });
+
+        const result = await response.json();
+
+        // Remove loading bubble
+        const loader = document.getElementById('loadingBubble');
+        if (loader) loader.remove();
+
+        if (response.ok && result.status === 'success') {
+            const data = result.data;
+            const aiBubble = document.createElement('div');
+            aiBubble.className = 'd-flex gap-2.5 mb-3';
+
+            let actionCardHtml = '';
+            if (data.type === 'expense_action' && data.expense_data) {
+                const exp = data.expense_data;
+                actionCardHtml = `
+                    <div class="card card-custom p-2.5 border-primary bg-light mt-2 shadow-sm">
+                        <h6 class="fw-bold text-primary mb-1.5 small"><i class="bi bi-lightning-charge-fill me-1"></i>Confirm & Log Expense</h6>
+                        <form method="POST" action="{{ url_for('expenses.create_expense') }}">
+                            <input type="hidden" name="csrf_token" value="${csrfToken}">
+                            <input type="hidden" name="group_id" value="${exp.group_id}">
+                            <input type="hidden" name="description" value="${escapeHtml(exp.description)}">
+                            <input type="hidden" name="amount" value="${exp.amount}">
+                            <input type="hidden" name="category" value="${escapeHtml(exp.category)}">
+                            <input type="hidden" name="paid_by" value="${currentUserId}">
+                            <input type="hidden" name="split_type" value="equal">
+                            ${exp.member_objects ? exp.member_objects.map(m => `<input type="hidden" name="equal_users" value="${m.id}">`).join('') : ''}
+                            <button type="submit" class="btn btn-success btn-sm fw-bold w-100 py-1.5 small"><i class="bi bi-check-circle-fill me-1"></i> Confirm Expense (₹${exp.amount.toFixed(2)})</button>
+                        </form>
+                    </div>
+                `;
+            }
+
+            aiBubble.innerHTML = `
+                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 30px; height: 30px;">
+                    <i class="bi bi-cpu-fill fs-6"></i>
+                </div>
+                <div class="bg-white p-2.5 px-3 rounded-4 border shadow-sm" style="max-width: 85%;">
+                    <div class="fw-bold text-primary mb-1 small">Nexus.AI Assistant</div>
+                    <div class="chat-text-content small">${formatMarkdownText(data.message)}</div>
+                    ${actionCardHtml}
+                </div>
+            `;
+            feed.appendChild(aiBubble);
+        } else {
+            renderErrorMessage(result.message || "Error processing request. Please try again.");
+        }
+    } catch (err) {
+        console.error(err);
+        const loader = document.getElementById('loadingBubble');
+        if (loader) loader.remove();
+        renderErrorMessage("Network connection error. Please try again.");
+    } finally {
+        sendBtn.disabled = false;
+        scrollToBottom();
+    }
+}
+
+function renderErrorMessage(text) {
+    const feed = document.getElementById('chatFeed');
+    const errBubble = document.createElement('div');
+    errBubble.className = 'd-flex gap-2.5 mb-3';
+    errBubble.innerHTML = `
+        <div class="rounded-circle bg-danger text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 30px; height: 30px;">
+            <i class="bi bi-exclamation-triangle-fill fs-6"></i>
+        </div>
+        <div class="bg-white p-2.5 px-3 rounded-4 border border-danger shadow-sm text-danger small" style="max-width: 85%;">
+            ${text}
+        </div>
+    `;
+    feed.appendChild(errBubble);
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.innerText = text;
+    return div.innerHTML;
+}
+
+scrollToBottom();
+</script>
+{% endblock %}

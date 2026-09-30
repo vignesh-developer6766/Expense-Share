@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Add Recurring Expense — ExpenseShare AI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center my-4">
+    <div class="col-md-6">
+        <div class="card card-custom p-4">
+            <h3 class="fw-bold mb-3"><i class="bi bi-calendar-plus text-primary me-2"></i>Add Recurring Expense</h3>
+
+            <form method="POST" action="{{ url_for('recurring.create_recurring') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="mb-3">
+                    <label for="group_id" class="form-label fw-semibold">Target Group</label>
+                    <select class="form-select" id="group_id" name="group_id" required>
+                        {% for group in groups %}
+                        <option value="{{ group.id }}">{{ group.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="description" class="form-label fw-semibold">Description</label>
+                    <input type="text" class="form-control" id="description" name="description" required placeholder="e.g. Apartment Rent, Wifi Bill, Hostel Fee">
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label for="amount" class="form-label fw-semibold">Amount (₹)</label>
+                        <input type="number" step="0.01" min="0.01" class="form-control" id="amount" name="amount" required placeholder="0.00">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="frequency" class="form-label fw-semibold">Frequency</label>
+                        <select class="form-select" id="frequency" name="frequency">
+                            {% for freq in frequencies %}
+                            <option value="{{ freq }}" {% if freq == 'monthly' %}selected{% endif %}>{{ freq|capitalize }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label for="category" class="form-label fw-semibold">Category</label>
+                        <select class="form-select" id="category" name="category">
+                            {% for cat in categories %}
+                            <option value="{{ cat }}" {% if cat == 'Rent' or cat == 'Utilities' %}selected{% endif %}>{{ cat }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="next_due_date" class="form-label fw-semibold">Next Due Date</label>
+                        <input type="date" class="form-control" id="next_due_date" name="next_due_date" required>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{{ url_for('recurring.list_recurring') }}" class="btn btn-outline-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-accent">Save Recurring Schedule</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

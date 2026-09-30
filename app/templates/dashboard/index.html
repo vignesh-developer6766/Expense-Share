@@ -1,0 +1,397 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — ExpenseShare AI{% endblock %}
+
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- 1. Overview Title & Action Buttons (ExpenseIn Style) -->
+<div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between mb-4 gap-3">
+    <div>
+        <h2 class="fw-bold text-dark mb-0">Overview</h2>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('expenses.create_expense') }}" class="btn btn-primary px-3 py-2 fw-bold text-white shadow-sm d-inline-flex align-items-center gap-1">
+            <i class="bi bi-plus-lg"></i> Add Expense
+        </a>
+        <a href="{{ url_for('ocr.upload') }}" class="btn btn-outline-secondary bg-white px-3 py-2 fw-semibold text-dark shadow-sm d-inline-flex align-items-center gap-1">
+            <i class="bi bi-receipt"></i> Add Receipt
+        </a>
+    </div>
+</div>
+
+<!-- 2. Three Enterprise KPI Stat Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card card-custom p-3.5 h-100">
+            <div class="d-flex align-items-center gap-3 mb-2">
+                <div class="icon-badge-tint" style="color: #EF4444; background-color: rgba(239, 68, 68, 0.1);">
+                    <i class="bi bi-wallet2"></i>
+                </div>
+                <div>
+                    <span class="text-muted small fw-semibold d-block">Net Balance</span>
+                    <div class="stat-value text-dark mb-0 fs-4">
+                        {{ overall_summary.net_balance | inr }}
+                    </div>
+                </div>
+            </div>
+            <div class="pt-2 border-top mt-2">
+                <a href="{{ url_for('expenses.list_expenses') }}" class="small fw-semibold text-danger text-decoration-none">View All &rarr;</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card card-custom p-3.5 h-100">
+            <div class="d-flex align-items-center gap-3 mb-2">
+                <div class="icon-badge-tint" style="color: #E53E3E; background-color: rgba(229, 62, 62, 0.1);">
+                    <i class="bi bi-arrow-up-right-circle"></i>
+                </div>
+                <div>
+                    <span class="text-muted small fw-semibold d-block">Awaiting Approval (You Owe)</span>
+                    <div class="stat-value text-danger mb-0 fs-4">
+                        {{ overall_summary.total_you_owe | inr }}
+                    </div>
+                </div>
+            </div>
+            <div class="pt-2 border-top mt-2">
+                <a href="{{ url_for('settlements.list_settlements') }}" class="small fw-semibold text-danger text-decoration-none">View All &rarr;</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card card-custom p-3.5 h-100">
+            <div class="d-flex align-items-center gap-3 mb-2">
+                <div class="icon-badge-tint" style="color: #319795; background-color: rgba(49, 151, 149, 0.1);">
+                    <i class="bi bi-arrow-down-left-circle"></i>
+                </div>
+                <div>
+                    <span class="text-muted small fw-semibold d-block">Awaiting Payment (You Are Owed)</span>
+                    <div class="stat-value text-success mb-0 fs-4">
+                        {{ overall_summary.total_you_are_owed | inr }}
+                    </div>
+                </div>
+            </div>
+            <div class="pt-2 border-top mt-2">
+                <a href="{{ url_for('settlements.list_settlements') }}" class="small fw-semibold text-danger text-decoration-none">View All &rarr;</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 3. Quick Actions Row -->
+<div class="card card-custom p-3 mb-4">
+    <div class="row g-2">
+        <div class="col-6 col-md-3">
+            <a href="{{ url_for('expenses.create_expense') }}" class="btn btn-primary w-100 py-2.5 rounded-3 fw-semibold d-flex align-items-center justify-content-center gap-2">
+                <i class="bi bi-plus-circle-fill fs-5"></i> Add Expense
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="{{ url_for('groups.create_group') }}" class="btn btn-outline-primary w-100 py-2.5 rounded-3 fw-semibold d-flex align-items-center justify-content-center gap-2">
+                <i class="bi bi-people-fill fs-5"></i> Create Group
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="{{ url_for('ai.index') }}" class="btn btn-outline-dark w-100 py-2.5 rounded-3 fw-semibold d-flex align-items-center justify-content-center gap-2">
+                <i class="bi bi-sparkles fs-5" style="color: #6366F1;"></i> AI Assistant
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="{{ url_for('ocr.upload') }}" class="btn btn-outline-secondary w-100 py-2.5 rounded-3 fw-semibold d-flex align-items-center justify-content-center gap-2">
+                <i class="bi bi-qr-code-scan fs-5"></i> Scan Receipt
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- 4. Charts Row -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card card-custom p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-pie-chart-fill text-primary me-2"></i>Category Breakdown</h5>
+                <a href="{{ url_for('analytics.index') }}" class="small text-decoration-none fw-semibold">View Analytics &rarr;</a>
+            </div>
+            {% if category_data %}
+            <div style="height: 250px; position: relative;">
+                <canvas id="categoryChart"></canvas>
+            </div>
+            {% else %}
+            {% with icon_class="bi-pie-chart", title="No Category Data", message="Record your first expense to see your category distribution breakdown.", cta_url=url_for('expenses.create_expense'), cta_label="Add Expense" %}
+                {% include "partials/_empty_state.html" %}
+            {% endwith %}
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card card-custom p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-graph-up text-primary me-2"></i>6-Month Spending Trend</h5>
+                <a href="{{ url_for('analytics.index') }}" class="small text-decoration-none fw-semibold">View Details &rarr;</a>
+            </div>
+            {% if monthly_trend %}
+            <div style="height: 250px; position: relative;">
+                <canvas id="monthlyTrendChart"></canvas>
+            </div>
+            {% else %}
+            {% with icon_class="bi-graph-up", title="No Spending Trend", message="Monthly expenditure trends will automatically generate as expenses are logged.", cta_url=url_for('expenses.create_expense'), cta_label="Add Expense" %}
+                {% include "partials/_empty_state.html" %}
+            {% endwith %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- 5. Active Groups Panel -->
+<div class="card card-custom p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-people-fill text-primary me-2"></i>Your Active Groups</h5>
+        <a href="{{ url_for('groups.list_groups') }}" class="small text-decoration-none fw-semibold">Manage All Groups &rarr;</a>
+    </div>
+
+    {% if groups %}
+    <div class="row g-3">
+        {% for gc in groups %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card card-custom p-3 h-100 border">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="fw-bold text-dark mb-0 text-truncate">
+                        <a href="{{ url_for('groups.group_detail', group_id=gc.group.id) }}" class="text-dark text-decoration-none">
+                            {{ gc.group.name }}
+                        </a>
+                    </h6>
+                    {% if gc.user_net_balance > 0 %}
+                    <span class="badge bg-success-subtle text-success border border-success-subtle">+{{ gc.user_net_balance | inr }}</span>
+                    {% elif gc.user_net_balance < 0 %}
+                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle">{{ gc.user_net_balance | inr }}</span>
+                    {% else %}
+                    <span class="badge bg-light text-muted border">₹0.00</span>
+                    {% endif %}
+                </div>
+
+                <!-- Member Avatars -->
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div class="avatar-stack">
+                        {% for member in gc.members[:4] %}
+                        <div class="avatar-circle" title="{{ member.name }}">
+                            {{ member.name[:1].upper() }}
+                        </div>
+                        {% endfor %}
+                        {% if gc.members|length > 4 %}
+                        <div class="avatar-circle bg-secondary text-white" style="font-size: 0.75rem;">
+                            +{{ gc.members|length - 4 }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <span class="small text-muted fw-semibold">Total {{ gc.total_spending | inr }}</span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    {% with icon_class="bi-people", title="No Groups Yet", message="Create or join a group to start sharing expenses with friends and roommates.", cta_url=url_for('groups.create_group'), cta_label="Create Group" %}
+        {% include "partials/_empty_state.html" %}
+    {% endwith %}
+    {% endif %}
+</div>
+
+<!-- 6. Recent Expenses Table -->
+<div class="card card-custom p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-receipt-cutoff text-primary me-2"></i>Recent Expenses</h5>
+        <a href="{{ url_for('expenses.list_expenses') }}" class="small text-decoration-none fw-semibold">View All Expenses &rarr;</a>
+    </div>
+
+    {% if recent_expenses %}
+    <div class="table-responsive">
+        <table class="table table-custom align-middle">
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Description</th>
+                    <th>Group</th>
+                    <th>Paid By</th>
+                    <th>Date</th>
+                    <th class="text-end">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for exp in recent_expenses %}
+                {% set cat_info = get_category_info(exp.category) %}
+                <tr>
+                    <td style="width: 140px;">
+                        <span class="d-inline-flex align-items-center gap-2 fw-semibold small">
+                            <span class="icon-badge-tint" style="width: 32px; height: 32px; font-size: 0.9rem; color: {{ cat_info.color }}; background-color: {{ cat_info.bg_tint }}; border-radius: 10px;">
+                                <i class="bi {{ cat_info.icon }}"></i>
+                            </span>
+                            {{ exp.category }}
+                        </span>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('expenses.expense_detail', expense_id=exp.id) }}" class="fw-semibold text-dark text-decoration-none">
+                            {{ exp.description }}
+                        </a>
+                    </td>
+                    <td><span class="badge bg-light text-dark border">{{ exp.group.name }}</span></td>
+                    <td><span class="small text-muted">{{ exp.payer.name }}</span></td>
+                    <td class="small text-muted">{{ exp.expense_date.strftime('%d %b %Y') }}</td>
+                    <td class="text-end fw-bold text-dark">{{ exp.amount | inr }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    {% with icon_class="bi-receipt", title="No Recent Expenses", message="No shared expenses have been recorded yet.", cta_url=url_for('expenses.create_expense'), cta_label="Add First Expense" %}
+        {% include "partials/_empty_state.html" %}
+    {% endwith %}
+    {% endif %}
+</div>
+
+<!-- 7. Suggested Settlements Panel -->
+{% if suggested_settlements %}
+<div class="card card-custom p-4 mb-4 border-accent">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-arrow-repeat text-primary me-2"></i>Suggested Debt Simplification</h5>
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Optimized Settlement</span>
+    </div>
+    <div class="row g-3">
+        {% for tx in suggested_settlements[:3] %}
+        <div class="col-md-4">
+            <div class="card p-3 border rounded-3 bg-light d-flex flex-row align-items-center justify-content-between">
+                <div>
+                    <div class="fw-bold small text-dark mb-1">
+                        <span class="text-danger">{{ tx.payer_name }}</span>
+                        <i class="bi bi-arrow-right mx-1 text-muted"></i>
+                        <span class="text-success">{{ tx.receiver_name }}</span>
+                    </div>
+                    <span class="badge bg-white text-muted border small">{{ tx.group_name }}</span>
+                </div>
+                <div class="text-end">
+                    <div class="fw-bold text-primary mb-1">{{ tx.amount | inr }}</div>
+                    {% if tx.payer_id == current_user.id or tx.receiver_id == current_user.id %}
+                    <form method="POST" action="{{ url_for('settlements.record_settlement') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="group_id" value="{{ tx.group_id }}">
+                        <input type="hidden" name="payer_id" value="{{ tx.payer_id }}">
+                        <input type="hidden" name="receiver_id" value="{{ tx.receiver_id }}">
+                        <input type="hidden" name="amount" value="{{ tx.amount }}">
+                        <button type="submit" class="btn btn-accent btn-sm py-0.5 px-2.5 fw-semibold" style="font-size: 0.75rem;" onclick="return confirm('Record this settlement payment?');">Settle</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- 8. Insights & Forecasting Card -->
+<div class="row g-4">
+    {% if forecast %}
+    <div class="col-lg-6">
+        <div class="card card-custom p-4 h-100 bg-white">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-cpu-fill text-primary me-2"></i>Spending Forecast</h5>
+                <span class="badge bg-warning text-dark fw-bold">Estimate</span>
+            </div>
+            <p class="text-muted small mb-3">{{ forecast.label }}</p>
+            <div class="p-3 bg-light rounded-3 border">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted small fw-semibold">Projected Next Month:</span>
+                    <span class="fs-4 fw-bold text-primary">{{ forecast.estimated_next_month | inr }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                    <span class="text-muted small">Current Month:</span>
+                    <span class="fw-semibold text-dark">{{ forecast.current_monthly_spending | inr }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if insights %}
+    <div class="col-lg-6">
+        <div class="card card-custom p-4 h-100 bg-primary-subtle border-primary-subtle">
+            <h5 class="fw-bold text-primary mb-3"><i class="bi bi-lightbulb-fill me-2"></i>AI Financial Insight</h5>
+            <ul class="list-unstyled mb-0">
+                {% for insight in insights[:2] %}
+                <li class="d-flex align-items-start mb-2">
+                    <i class="bi bi-check-circle-fill text-primary me-2 mt-1"></i>
+                    <span class="fw-semibold text-dark small">{{ insight }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Category Doughnut Chart
+    {% if category_data %}
+    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    const categoryMap = {{ category_map | tojson }};
+    const catLabels = {{ category_data.keys()|list|tojson }};
+    const catData = {{ category_data.values()|list|tojson }};
+    const catColors = catLabels.map(cat => categoryMap[cat] ? categoryMap[cat].color : '#64748B');
+
+    new Chart(categoryCtx, {
+        type: 'doughnut',
+        data: {
+            labels: catLabels,
+            datasets: [{
+                data: catData,
+                backgroundColor: catColors,
+                borderWidth: 2,
+                borderColor: '#ffffff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { boxWidth: 12, font: { family: 'Inter', size: 12 } } }
+            }
+        }
+    });
+    {% endif %}
+
+    // Monthly Spending Bar Chart (ExpenseIn Style)
+    {% if monthly_trend %}
+    const monthlyCtx = document.getElementById('monthlyTrendChart').getContext('2d');
+    const monthlyData = {{ monthly_trend|tojson }};
+    new Chart(monthlyCtx, {
+        type: 'bar',
+        data: {
+            labels: monthlyData.map(d => d.month),
+            datasets: [{
+                label: 'Monthly Spend (₹)',
+                data: monthlyData.map(d => d.amount),
+                backgroundColor: '#90CDF4',
+                hoverBackgroundColor: '#3182CE',
+                borderRadius: 6,
+                borderSkipped: false,
+                barThickness: 28,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, grid: { color: '#E2E8F0' }, ticks: { font: { family: 'Inter', size: 11 } } },
+                x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 11 } } }
+            }
+        }
+    });
+    {% endif %}
+</script>
+{% endblock %}

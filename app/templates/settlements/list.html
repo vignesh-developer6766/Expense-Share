@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}Balances & Settlements — ExpenseShare AI{% endblock %}
+
+{% block page_title %}Balances & Settlements{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold text-dark mb-1">Balances & Smart Settlements</h3>
+        <p class="text-muted mb-0">View member net balances and automated debt simplification.</p>
+    </div>
+</div>
+
+<!-- Overall Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        {% with 
+            icon_class="bi-arrow-up-right-circle-fill", 
+            icon_color="#DC2626", 
+            bg_tint="rgba(220, 38, 38, 0.12)", 
+            label="You Owe", 
+            value=overall_summary.total_you_owe, 
+            value_color="var(--danger)",
+            caption="Total payable" 
+        %}
+            {% include "partials/_stat_card.html" %}
+        {% endwith %}
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        {% with 
+            icon_class="bi-arrow-down-left-circle-fill", 
+            icon_color="#16A34A", 
+            bg_tint="rgba(22, 163, 74, 0.12)", 
+            label="You Are Owed", 
+            value=overall_summary.total_you_are_owed, 
+            value_color="var(--success)",
+            caption="Total receivable" 
+        %}
+            {% include "partials/_stat_card.html" %}
+        {% endwith %}
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        {% with 
+            icon_class="bi-wallet2", 
+            icon_color="#3B82F6", 
+            bg_tint="rgba(59, 130, 246, 0.12)", 
+            label="Net Position", 
+            value=overall_summary.net_balance, 
+            value_color="var(--accent)" if overall_summary.net_balance >= 0 else "var(--warning)",
+            caption="Net overall standing" 
+        %}
+            {% include "partials/_stat_card.html" %}
+        {% endwith %}
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        {% with 
+            icon_class="bi-collection-fill", 
+            icon_color="#8B5CF6", 
+            bg_tint="rgba(139, 92, 246, 0.12)", 
+            label="Total Paid", 
+            value=overall_summary.total_paid, 
+            value_color="var(--text-main)",
+            caption="Combined payments" 
+        %}
+            {% include "partials/_stat_card.html" %}
+        {% endwith %}
+    </div>
+</div>
+
+<!-- Group Selector -->
+{% if groups %}
+<div class="card card-custom p-3 mb-4">
+    <div class="row align-items-center">
+        <div class="col-md-4">
+            <label for="group_select" class="form-label fw-bold mb-0 text-dark">
+                <i class="bi bi-people-fill text-primary me-2"></i>Select Group
+            </label>
+        </div>
+        <div class="col-md-8">
+            <select class="form-select" id="group_select" onchange="window.location.href='{{ url_for('settlements.list_settlements') }}?group_id=' + this.value;">
+                {% for group in groups %}
+                <option value="{{ group.id }}" {% if selected_group and selected_group.id == group.id %}selected{% endif %}>{{ group.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+</div>
+
+{% if selected_group %}
+<div class="row g-4 mb-4">
+    <!-- Simplified Settlements Column -->
+    <div class="col-lg-7">
+        <div class="card card-custom p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-dark mb-0"><i class="bi bi-magic text-primary me-2"></i>Smart Debt Simplification</h5>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Optimized</span>
+            </div>
+            <p class="text-muted small mb-3">Minimum settlement transactions needed to clear all group balances.</p>
+
+            {% if simplified_debts %}
+            <div class="list-group mb-3">
+                {% for tx in simplified_debts %}
+                <div class="list-group-item d-flex justify-content-between align-items-center p-3 mb-2 rounded-3 border">
+                    <div>
+                        <div class="fw-bold text-dark">
+                            <span class="text-danger">{{ tx.payer_name }}</span>
+                            <i class="bi bi-arrow-right mx-2 text-muted"></i>
+                            <span class="text-success">{{ tx.receiver_name }}</span>
+                        </div>
+                        <span class="small text-muted">Suggested Debt Settlement</span>
+                    </div>
+                    <div class="text-end">
+                        <div class="fw-bold text-dark fs-5 mb-1">{{ tx.amount | inr }}</div>
+                        {% if tx.payer_id == current_user.id or tx.receiver_id == current_user.id %}
+                        <form method="POST" action="{{ url_for('settlements.record_settlement') }}" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="group_id" value="{{ selected_group.id }}">
+                            <input type="hidden" name="payer_id" value="{{ tx.payer_id }}">
+                            <input type="hidden" name="receiver_id" value="{{ tx.receiver_id }}">
+                            <input type="hidden" name="amount" value="{{ tx.amount }}">
+                            <button type="submit" class="btn btn-primary btn-sm rounded-3 px-3 fw-semibold" onclick="return confirm('Record this settlement payment?');">Settle Up</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            {% with icon_class="bi-check-circle-fill", title="All Settled Up!", message="Everyone in this group has a net zero balance." %}
+                {% include "partials/_empty_state.html" %}
+            {% endwith %}
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Member Balances Column -->
+    <div class="col-lg-5">
+        <div class="card card-custom p-4 h-100">
+            <h5 class="fw-bold text-dark mb-3"><i class="bi bi-person-lines-fill text-primary me-2"></i>Group Member Balances</h5>
+            <ul class="list-group list-group-flush">
+                {% for mb in group_member_balances %}
+                <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-3 border-bottom">
+                    <div class="d-flex align-items-center me-2">
+                        <div class="avatar-circle me-2">
+                            {{ mb.user.name[:1].upper() }}
+                        </div>
+                        <strong class="text-dark">{{ mb.user.name }}</strong>
+                    </div>
+                    <div>
+                        {% if mb.net_balance > 0 %}
+                        <span class="fw-bold text-success">+{{ mb.net_balance | inr }}</span>
+                        <div class="small text-muted text-end" style="font-size: 0.75rem;">is owed</div>
+                        {% elif mb.net_balance < 0 %}
+                        <span class="fw-bold text-danger">{{ mb.net_balance | inr }}</span>
+                        <div class="small text-muted text-end" style="font-size: 0.75rem;">owes</div>
+                        {% else %}
+                        <span class="fw-bold text-muted">₹0.00</span>
+                        <div class="small text-muted text-end" style="font-size: 0.75rem;">settled</div>
+                        {% endif %}
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Settlement History -->
+<div class="card card-custom p-4 mb-4">
+    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-clock-history text-primary me-2"></i>Settlement Payment History</h5>
+    {% if settlement_history %}
+    <div class="table-responsive">
+        <table class="table table-custom align-middle">
+            <thead>
+                <tr>
+                    <th>Payer</th>
+                    <th>Receiver</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in settlement_history %}
+                <tr>
+                    <td><span class="fw-semibold text-danger">{{ s.payer.name }}</span></td>
+                    <td><span class="fw-semibold text-success">{{ s.receiver.name }}</span></td>
+                    <td class="fw-bold text-dark">{{ s.amount | inr }}</td>
+                    <td><span class="badge bg-success-subtle text-success border border-success-subtle">Completed</span></td>
+                    <td class="small text-muted">{{ s.settled_at.strftime('%d %b %Y, %I:%M %p') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="text-muted mb-0">No recorded settlement transactions for this group yet.</p>
+    {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+{% with icon_class="bi-arrow-left-right", title="No Groups Available", message="Create or join a group to see smart debt settlements and member balances.", cta_url=url_for('groups.create_group'), cta_label="Create Group" %}
+    {% include "partials/_empty_state.html" %}
+{% endwith %}
+{% endif %}
+{% endblock %}

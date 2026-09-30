@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Groups — ExpenseShare AI{% endblock %}
+
+{% block page_title %}Groups{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold text-dark mb-1">Your Expense Groups</h3>
+        <p class="text-muted mb-0">Manage shared trips, apartment bills, and group spending rosters.</p>
+    </div>
+    <a href="{{ url_for('groups.create_group') }}" class="btn btn-primary px-4 py-2 rounded-3 fw-semibold">
+        <i class="bi bi-plus-circle-fill me-1"></i> Create Group
+    </a>
+</div>
+
+{% if groups %}
+<div class="row g-4">
+    {% for group in groups %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card card-custom p-4 h-100 d-flex flex-column justify-content-between">
+            <div>
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h5 class="fw-bold text-dark mb-0 text-truncate me-2">
+                        <a href="{{ url_for('groups.group_detail', group_id=group.id) }}" class="text-dark text-decoration-none">
+                            {{ group.name }}
+                        </a>
+                    </h5>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">
+                        {{ group.members|length }} members
+                    </span>
+                </div>
+                <p class="text-muted small mb-4 line-clamp-2" style="min-height: 40px;">
+                    {{ group.description or 'No group description provided.' }}
+                </p>
+            </div>
+
+            <div class="border-top pt-3 mt-auto d-flex justify-content-between align-items-center">
+                <div class="avatar-stack">
+                    {% for member in group.members[:4] %}
+                    <div class="avatar-circle" title="{{ member.user.name }}">
+                        {{ member.user.name[:1].upper() }}
+                    </div>
+                    {% endfor %}
+                    {% if group.members|length > 4 %}
+                    <div class="avatar-circle bg-secondary text-white" style="font-size: 0.75rem;">
+                        +{{ group.members|length - 4 }}
+                    </div>
+                    {% endif %}
+                </div>
+                <a href="{{ url_for('groups.group_detail', group_id=group.id) }}" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-semibold">
+                    View Group <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+{% with icon_class="bi-people", title="No Groups Yet", message="You are not enrolled in any expense groups. Create your first group to share expenses!", cta_url=url_for('groups.create_group'), cta_label="Create New Group" %}
+    {% include "partials/_empty_state.html" %}
+{% endwith %}
+{% endif %}
+{% endblock %}

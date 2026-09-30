@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics — ExpenseShare AI{% endblock %}
+
+{% block page_title %}Analytics{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold text-dark mb-1">Financial Intelligence & Analytics</h3>
+        <p class="text-muted mb-0">Deep spending insights, predictive trends, and category distribution.</p>
+    </div>
+</div>
+
+<!-- Forecast Banner -->
+{% if forecast %}
+<div class="card card-custom p-4 mb-4 border-start border-4 border-accent bg-white">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle mb-2"><i class="bi bi-crystal-ball me-1"></i> {{ forecast.label }}</span>
+            <h4 class="fw-bold mb-1">Estimated Next Month Spending: <span class="text-primary">{{ forecast.estimated_next_month | inr }}</span></h4>
+            <p class="text-muted small mb-0">
+                Current month: {{ forecast.current_monthly_spending | inr }} &bull;
+                Projected Growth: <strong class="{% if forecast.growth_percentage > 0 %}text-danger{% else %}text-success{% endif %}">{% if forecast.growth_percentage > 0 %}+{% endif %}{{ forecast.growth_percentage }}%</strong>
+            </p>
+        </div>
+        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+            <span class="small text-muted d-block fw-semibold">Weighted Moving Average Projection</span>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Automated Insights Section -->
+<div class="card card-custom p-4 mb-4 bg-primary-subtle border-primary-subtle">
+    <h5 class="fw-bold text-primary mb-3"><i class="bi bi-lightbulb-fill me-2"></i>Automated Spending Insights</h5>
+    <div class="row g-3">
+        {% for insight in insights %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card p-3 border-0 shadow-sm h-100 bg-white rounded-3">
+                <div class="d-flex align-items-start">
+                    <div class="icon-badge-tint me-3" style="color: var(--accent); background-color: rgba(59, 130, 246, 0.12);">
+                        <i class="bi bi-graph-up-arrow"></i>
+                    </div>
+                    <div>
+                        <p class="mb-0 fw-semibold text-dark small">{{ insight }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Charts Grid -->
+<div class="row g-4 mb-4">
+    <!-- Category Distribution -->
+    <div class="col-lg-6">
+        <div class="card card-custom p-4 h-100">
+            <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-pie-chart-fill text-primary me-2"></i>Spending by Category</h5>
+            {% if category_data %}
+            <div style="height: 280px; position: relative;">
+                <canvas id="categoryChart"></canvas>
+            </div>
+            {% else %}
+            {% with icon_class="bi-pie-chart", title="No Category Data", message="No expense categories to chart yet." %}
+                {% include "partials/_empty_state.html" %}
+            {% endwith %}
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Group Comparison -->
+    <div class="col-lg-6">
+        <div class="card card-custom p-4 h-100">
+            <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-bar-chart-fill text-primary me-2"></i>Group Spending Comparison</h5>
+            {% if group_comparison %}
+            <div style="height: 280px; position: relative;">
+                <canvas id="groupComparisonChart"></canvas>
+            </div>
+            {% else %}
+            {% with icon_class="bi-bar-chart", title="No Group Comparison", message="Group comparison charts will display once expenses are added across groups." %}
+                {% include "partials/_empty_state.html" %}
+            {% endwith %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Monthly Trend Chart -->
+<div class="card card-custom p-4 mb-4">
+    <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-calendar-range-fill text-primary me-2"></i>6-Month Spending Trend</h5>
+    {% if monthly_trend %}
+    <div style="height: 300px; position: relative;">
+        <canvas id="monthlyTrendChart"></canvas>
+    </div>
+    {% else %}
+    {% with icon_class="bi-graph-up", title="No Trend Data", message="Monthly spending trends will appear after recording expenses." %}
+        {% include "partials/_empty_state.html" %}
+    {% endwith %}
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Category Doughnut Chart
+    {% if category_data %}
+    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    const categoryMap = {{ category_map | tojson }};
+    const catLabels = {{ category_data.keys()|list|tojson }};
+    const catData = {{ category_data.values()|list|tojson }};
+    const catColors = catLabels.map(cat => categoryMap[cat] ? categoryMap[cat].color : '#64748B');
+
+    new Chart(categoryCtx, {
+        type: 'doughnut',
+        data: {
+            labels: catLabels,
+            datasets: [{
+                data: catData,
+                backgroundColor: catColors,
+                borderWidth: 2,
+                borderColor: '#ffffff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 12 } } } }
+        }
+    });
+    {% endif %}
+
+    // Group Comparison Bar Chart
+    {% if group_comparison %}
+    const groupCtx = document.getElementById('groupComparisonChart').getContext('2d');
+    const groupData = {{ group_comparison|tojson }};
+    new Chart(groupCtx, {
+        type: 'bar',
+        data: {
+            labels: groupData.map(g => g.group_name),
+            datasets: [{
+                label: 'Total Group Spend (₹)',
+                data: groupData.map(g => g.amount),
+                backgroundColor: '#3B82F6',
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, grid: { color: '#E2E8F0' } }, x: { grid: { display: false } } }
+        }
+    });
+    {% endif %}
+
+    // Monthly Trend Line Chart
+    {% if monthly_trend %}
+    const monthlyCtx = document.getElementById('monthlyTrendChart').getContext('2d');
+    const monthlyData = {{ monthly_trend|tojson }};
+    new Chart(monthlyCtx, {
+        type: 'line',
+        data: {
+            labels: monthlyData.map(d => d.month),
+            datasets: [{
+                label: 'Monthly Total (₹)',
+                data: monthlyData.map(d => d.amount),
+                borderColor: '#10B981',
+                backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                fill: true,
+                borderWidth: 2.5,
+                tension: 0.35,
+                pointRadius: 4,
+                pointBackgroundColor: '#10B981'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, grid: { color: '#E2E8F0' } }, x: { grid: { display: false } } }
+        }
+    });
+    {% endif %}
+</script>
+{% endblock %}

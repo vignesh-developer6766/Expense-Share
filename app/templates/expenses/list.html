@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Expenses — ExpenseShare AI{% endblock %}
+
+{% block page_title %}Expenses{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold text-dark mb-1">Expense Register</h3>
+        <p class="text-muted mb-0">Search, filter, and review all group expenses.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('expenses.export_csv', group_id=selected_group_id, category=selected_category) }}" class="btn btn-outline-secondary px-3 py-2 rounded-3 fw-semibold">
+            <i class="bi bi-download me-1"></i> Export CSV
+        </a>
+        <a href="{{ url_for('expenses.create_expense') }}" class="btn btn-primary px-4 py-2 rounded-3 fw-semibold">
+            <i class="bi bi-plus-circle-fill me-1"></i> Add Expense
+        </a>
+    </div>
+</div>
+
+<!-- Search & Filter Controls -->
+<div class="card card-custom p-3 mb-4">
+    <form method="GET" action="{{ url_for('expenses.list_expenses') }}" class="row g-3">
+        <div class="col-md-3">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" class="form-control border-start-0" name="search" placeholder="Search description..." value="{{ search or '' }}">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select form-select-sm" name="group_id" onchange="this.form.submit()">
+                <option value="">All Groups</option>
+                {% for group in groups %}
+                <option value="{{ group.id }}" {% if selected_group_id == group.id %}selected{% endif %}>{{ group.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select form-select-sm" name="category" onchange="this.form.submit()">
+                <option value="all">All Categories</option>
+                {% for cat in categories %}
+                <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <select class="form-select form-select-sm" name="sort_by" onchange="this.form.submit()">
+                <option value="newest" {% if sort_by == 'newest' %}selected{% endif %}>Newest First</option>
+                <option value="oldest" {% if sort_by == 'oldest' %}selected{% endif %}>Oldest First</option>
+                <option value="highest" {% if sort_by == 'highest' %}selected{% endif %}>Highest Amount</option>
+                <option value="lowest" {% if sort_by == 'lowest' %}selected{% endif %}>Lowest Amount</option>
+            </select>
+            <button type="submit" class="btn btn-primary btn-sm px-3"><i class="bi bi-filter"></i></button>
+        </div>
+    </form>
+</div>
+
+<!-- Expenses List Table -->
+{% if expenses %}
+<div class="card card-custom p-0 overflow-hidden mb-4">
+    <div class="table-responsive">
+        <table class="table table-custom align-middle">
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Description</th>
+                    <th>Group</th>
+                    <th>Paid By</th>
+                    <th>Date</th>
+                    <th class="text-end">Amount</th>
+                    <th class="text-end pe-4">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for exp in expenses %}
+                {% set cat_info = get_category_info(exp.category) %}
+                <tr>
+                    <td style="width: 140px;">
+                        <span class="d-inline-flex align-items-center gap-2 fw-semibold small">
+                            <span class="icon-badge-tint" style="width: 32px; height: 32px; font-size: 0.9rem; color: {{ cat_info.color }}; background-color: {{ cat_info.bg_tint }};">
+                                <i class="bi {{ cat_info.icon }}"></i>
+                            </span>
+                            {{ exp.category }}
+                        </span>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('expenses.expense_detail', expense_id=exp.id) }}" class="fw-semibold text-dark text-decoration-none">
+                            {{ exp.description }}
+                        </a>
+                        {% if exp.receipt_image %}
+                        <i class="bi bi-paperclip text-muted ms-1" title="Receipt Attached"></i>
+                        {% endif %}
+                    </td>
+                    <td><span class="badge bg-light text-dark border">{{ exp.group.name }}</span></td>
+                    <td><span class="small text-muted">{{ exp.payer.name }}</span></td>
+                    <td class="small text-muted">{{ exp.expense_date.strftime('%d %b %Y') }}</td>
+                    <td class="text-end fw-bold text-dark">{{ exp.amount | inr }}</td>
+                    <td class="text-end pe-4">
+                        <a href="{{ url_for('expenses.expense_detail', expense_id=exp.id) }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">Details</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+{% with icon_class="bi-receipt-cutoff", title="No Expenses Found", message="No expenses match your current search or filter query.", cta_url=url_for('expenses.create_expense'), cta_label="Add New Expense" %}
+    {% include "partials/_empty_state.html" %}
+{% endwith %}
+{% endif %}
+{% endblock %}

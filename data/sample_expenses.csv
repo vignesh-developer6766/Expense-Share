@@ -1,0 +1,41 @@
+description,category
+swiggy dinner with team,Food
+dominos pizza party,Food
+starbucks coffee and snacks,Food
+zomato lunch order,Food
+breakfast at hotel,Food
+grocery shopping at supermarket,Food
+restaurant food bill,Food
+dinner at restaurant,Food
+burger and fries,Food
+kfc chicken wings,Food
+uber ride to office,Transport
+ola cab fare to railway station,Transport
+bus ticket booking,Transport
+metro train card recharge,Transport
+flight ticket to goa,Transport
+auto rickshaw fare,Transport
+petrol fuel station refill,Transport
+amazon headphones purchase,Shopping
+flipkart online shopping shoes,Shopping
+myntra clothes purchase,Shopping
+electronics store gadget,Shopping
+grocery store provisions,Shopping
+netflix monthly subscription,Entertainment
+spotify premium music,Entertainment
+movie tickets bookmyshow,Entertainment
+gaming console subscription,Entertainment
+bowling and arcade games,Entertainment
+electricity bill payment,Utilities
+water bill monthly payment,Utilities
+wifi broadband internet bill,Utilities
+gas cylinder refill bill,Utilities
+mobile prepaid recharge,Utilities
+resort booking room rent,Travel
+hotel room booking goa,Travel
+sightseeing tour guide fee,Travel
+house monthly rent payment,Rent
+flat rent owner transfer,Rent
+hostel room rent fee,Rent
+miscellaneous team expense,Other
+general cash expense,Other

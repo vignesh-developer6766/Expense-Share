@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Add Expense — ExpenseShare AI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center my-4">
+    <div class="col-lg-8">
+        <div class="card card-custom p-4">
+            <h3 class="fw-bold mb-4"><i class="bi bi-journal-plus text-primary me-2"></i>Add New Expense</h3>
+
+            <form method="POST" action="{{ url_for('expenses.create_expense') }}" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label for="group_id" class="form-label fw-semibold">Select Group</label>
+                        <select class="form-select" id="group_id" name="group_id" onchange="window.location.href='{{ url_for('expenses.create_expense') }}?group_id=' + this.value;">
+                            {% for group in groups %}
+                            <option value="{{ group.id }}" {% if selected_group and selected_group.id == group.id %}selected{% endif %}>{{ group.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="paid_by" class="form-label fw-semibold">Paid By</label>
+                        <select class="form-select" id="paid_by" name="paid_by" required>
+                            {% if selected_group %}
+                            {% for member in selected_group.members %}
+                            <option value="{{ member.user.id }}" {% if member.user.id == current_user.id %}selected{% endif %}>{{ member.user.name }}</option>
+                            {% endfor %}
+                            {% endif %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-8">
+                        <label for="description" class="form-label fw-semibold">Description</label>
+                        <input type="text" class="form-control" id="description" name="description" required placeholder="e.g. Swiggy Dinner, Uber Ride, Grocery Shopping">
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="amount" class="form-label fw-semibold">Amount (₹)</label>
+                        <input type="number" step="0.01" min="0.01" class="form-control" id="amount" name="amount" required placeholder="0.00">
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label for="category" class="form-label fw-semibold">Category</label>
+                        <select class="form-select" id="category" name="category">
+                            {% for cat in categories %}
+                            <option value="{{ cat }}">{{ cat }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="receipt_image" class="form-label fw-semibold">Upload Receipt (Optional)</label>
+                        <input type="file" class="form-control" id="receipt_image" name="receipt_image" accept="image/*,.pdf">
+                    </div>
+                </div>
+
+                <!-- Split Method Tabs -->
+                <div class="mb-4">
+                    <label class="form-label fw-semibold mb-2">Split Method</label>
+                    <input type="hidden" name="split_type" id="split_type" value="equal">
+
+                    <ul class="nav nav-pills nav-fill mb-3" id="splitTabs" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active fw-semibold" id="equal-tab" data-bs-toggle="pill" data-bs-target="#equal-pane" type="button" onclick="setSplitType('equal')">
+                                <i class="bi bi-slash-circle me-1"></i> Equal (=)
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link fw-semibold" id="exact-tab" data-bs-toggle="pill" data-bs-target="#exact-pane" type="button" onclick="setSplitType('exact')">
+                                <i class="bi bi-currency-rupee me-1"></i> Exact (₹)
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link fw-semibold" id="percentage-tab" data-bs-toggle="pill" data-bs-target="#percentage-pane" type="button" onclick="setSplitType('percentage')">
+                                <i class="bi bi-percent me-1"></i> Percentage (%)
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link fw-semibold" id="shares-tab" data-bs-toggle="pill" data-bs-target="#shares-pane" type="button" onclick="setSplitType('shares')">
+                                <i class="bi bi-pie-chart me-1"></i> Shares (Parts)
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content border rounded-3 p-3 bg-light">
+                        <!-- Equal Pane -->
+                        <div class="tab-pane fade show active" id="equal-pane">
+                            <p class="small text-muted mb-2">Split equally among selected members:</p>
+                            {% if selected_group %}
+                            {% for member in selected_group.members %}
+                            <div class="form-check mb-1">
+                                <input class="form-check-input" type="checkbox" name="equal_users" value="{{ member.user.id }}" id="equal_user_{{ member.user.id }}" checked>
+                                <label class="form-check-label" for="equal_user_{{ member.user.id }}">{{ member.user.name }}</label>
+                            </div>
+                            {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <!-- Exact Pane -->
+                        <div class="tab-pane fade" id="exact-pane">
+                            <p class="small text-muted mb-2">Enter exact amount for each member (sum must equal total):</p>
+                            {% if selected_group %}
+                            {% for member in selected_group.members %}
+                            <div class="row align-items-center mb-2">
+                                <div class="col-6"><label class="col-form-label small fw-semibold">{{ member.user.name }}</label></div>
+                                <div class="col-6">
+                                    <input type="number" step="0.01" min="0" class="form-control form-control-sm" name="exact_{{ member.user.id }}" placeholder="0.00">
+                                </div>
+                            </div>
+                            {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <!-- Percentage Pane -->
+                        <div class="tab-pane fade" id="percentage-pane">
+                            <p class="small text-muted mb-2">Enter percentage for each member (sum must equal 100%):</p>
+                            {% if selected_group %}
+                            {% for member in selected_group.members %}
+                            <div class="row align-items-center mb-2">
+                                <div class="col-6"><label class="col-form-label small fw-semibold">{{ member.user.name }}</label></div>
+                                <div class="col-6">
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" step="0.01" min="0" max="100" class="form-control" name="percentage_{{ member.user.id }}" placeholder="0.00">
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <!-- Shares Pane -->
+                        <div class="tab-pane fade" id="shares-pane">
+                            <p class="small text-muted mb-2">Enter relative shares (e.g. 1 share, 2 shares):</p>
+                            {% if selected_group %}
+                            {% for member in selected_group.members %}
+                            <div class="row align-items-center mb-2">
+                                <div class="col-6"><label class="col-form-label small fw-semibold">{{ member.user.name }}</label></div>
+                                <div class="col-6">
+                                    <input type="number" step="1" min="0" class="form-control form-control-sm" name="shares_{{ member.user.id }}" value="1">
+                                </div>
+                            </div>
+                            {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="notes" class="form-label fw-semibold">Notes (Optional)</label>
+                    <textarea class="form-control" id="notes" name="notes" rows="2" placeholder="Additional details..."></textarea>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{{ url_for('expenses.list_expenses') }}" class="btn btn-outline-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-accent">Save Expense</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function setSplitType(type) {
+        document.getElementById('split_type').value = type;
+    }
+</script>
+{% endblock %}

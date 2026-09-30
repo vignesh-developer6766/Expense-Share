@@ -1,0 +1,15 @@
+<!-- Reusable Stat Card -->
+<div class="card card-custom stat-card h-100">
+    <div class="icon-badge-tint" style="color: {{ icon_color }}; background-color: {{ bg_tint }};">
+        <i class="bi {{ icon_class }}"></i>
+    </div>
+    <div class="flex-grow-1 min-w-0">
+        <span class="text-muted small fw-semibold d-block text-truncate">{{ label }}</span>
+        <div class="stat-value" style="color: {{ value_color | default('var(--text-main)') }};">
+            {{ value | inr }}
+        </div>
+        {% if caption %}
+        <span class="text-muted small d-block text-truncate" style="font-size: 0.78rem;">{{ caption }}</span>
+        {% endif %}
+    </div>
+</div>
