@@ -161,4 +161,4 @@ docker compose up --build
 
 ## Author
 
-Developed by **ExpenseShare AI Engineering Team**.
+Developed by **Vignesh Rahul E**.
