@@ -64,6 +64,7 @@
                     </td>
                     <td class="text-end">
                         <div class="d-inline-flex gap-2">
+                            {% if current_user.is_admin %}
                             <a href="{{ url_for('users.edit_user', user_id=u.id) }}" class="btn btn-outline-primary btn-sm px-3 rounded-2 fw-semibold">
                                 <i class="bi bi-pencil-square me-1"></i> Edit
                             </a>
@@ -79,6 +80,12 @@
                             <button class="btn btn-light btn-sm px-3 rounded-2 fw-semibold text-muted border" disabled title="Cannot delete current session user">
                                 <i class="bi bi-lock me-1"></i> Active
                             </button>
+                            {% endif %}
+
+                            {% else %}
+                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-3 py-2 rounded-pill">
+                                <i class="bi bi-eye me-1"></i> View Only
+                            </span>
                             {% endif %}
                         </div>
                     </td>

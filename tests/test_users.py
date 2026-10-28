@@ -19,6 +19,14 @@ def client(app):
     return app.test_client()
 
 
+def _promote_to_admin(app, email):
+    """Helper: grant is_admin=True to a user inside the app context."""
+    with app.app_context():
+        user = User.query.filter_by(email=email).first()
+        user.is_admin = True
+        db.session.commit()
+
+
 def test_users_list_route(client, app):
     # Register admin and another user
     client.post(
@@ -40,7 +48,7 @@ def test_users_list_route(client, app):
         },
     )
 
-    # Login as Admin User
+    # Login as Admin User (no admin flag needed just to view the list)
     client.post(
         "/auth/login",
         data={"email": "admin@example.com", "password": "Password123"},
@@ -74,6 +82,9 @@ def test_edit_user_route(client, app):
         },
     )
 
+    # Grant admin privileges before logging in
+    _promote_to_admin(app, "admin@example.com")
+
     client.post(
         "/auth/login",
         data={"email": "admin@example.com", "password": "Password123"},
@@ -83,7 +94,7 @@ def test_edit_user_route(client, app):
         target = User.query.filter_by(email="original@example.com").first()
         target_id = target.id
 
-    # Post edit user
+    # Post edit user as admin
     response = client.post(
         f"/users/{target_id}/edit",
         data={
@@ -123,6 +134,9 @@ def test_delete_user_route(client, app):
         },
     )
 
+    # Grant admin privileges before logging in
+    _promote_to_admin(app, "admin@example.com")
+
     client.post(
         "/auth/login",
         data={"email": "admin@example.com", "password": "Password123"},
@@ -132,7 +146,7 @@ def test_delete_user_route(client, app):
         target = User.query.filter_by(email="deleteme@example.com").first()
         target_id = target.id
 
-    # Post delete user
+    # Post delete user as admin
     response = client.post(
         f"/users/{target_id}/delete",
         follow_redirects=True,

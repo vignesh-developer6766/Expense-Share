@@ -43,13 +43,16 @@
                     </div>
                 </div>
 
+                {% if current_user.is_admin %}
                 <div class="mb-4">
                     <label for="password" class="form-label fw-semibold">New Password <span class="text-muted fw-normal small">(Leave blank to keep unchanged)</span></label>
                     <div class="input-group">
                         <span class="input-group-text bg-light text-muted"><i class="bi bi-lock"></i></span>
                         <input type="password" class="form-control" id="password" name="password" placeholder="Enter new password">
                     </div>
+                    <div class="form-text text-muted"><i class="bi bi-shield-lock-fill me-1 text-warning"></i> Admin-only: only administrators can reset passwords.</div>
                 </div>
+                {% endif %}
 
                 <div class="d-flex gap-2 pt-2">
                     <button type="submit" class="btn btn-primary flex-grow-1 py-2.5 fw-bold">

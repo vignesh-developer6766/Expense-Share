@@ -72,9 +72,13 @@ flowchart TD
 
 ## ⚙️ 3. Core Modules & How They Work
 
-### 🔑 1. Authentication & User Management (`/auth` & `/users`)
-- **Authentication**: Users log in with email and password. Passwords are securely hashed using Werkzeug's `generate_password_hash` algorithm.
-- **User Management**: Admins and users can view the registered accounts table, see individual group/expense stats, edit account details, and delete users (`/users`).
+### 🔑 1. Authentication & Role-Based User Management (`/auth` & `/users`)
+- **Authentication**: Users register and log in with email and password. Passwords are encrypted using Werkzeug's secure hash algorithm (`generate_password_hash`).
+- **Role-Based Access Control (Admin vs Member)**:
+  - The `User` model contains an `is_admin` boolean flag (`is_admin=True` for Admin, `False` for standard members).
+  - **Admin Privileges**: Only users with `is_admin=True` (e.g. `vignesh@example.com`) have permission to edit user profiles, change/reset passwords, and delete user accounts.
+  - **Regular User View**: Regular users viewing `/users` see a read-only directory with "View Only" badges. The Edit and Delete buttons and password update fields are strictly hidden in the UI and enforced with server-side access control guards (`_require_admin()` redirects unauthorized attempts).
+  - **Self-Deletion Protection**: Logged-in admins cannot delete their own active account.
 
 ### 📐 2. Multi-Split Calculation Engine (`app/services/split_service.py`)
 Supports 4 distinct expense splitting methods:
@@ -122,7 +126,7 @@ erDiagram
 ```
 
 ### Table Definitions:
-- **`users`**: `id`, `name`, `email`, `password_hash`, `created_at`
+- **`users`**: `id`, `name`, `email`, `password_hash`, `is_admin`, `profile_image`, `created_at`, `updated_at`
 - **`groups`**: `id`, `name`, `description`, `created_by`, `created_at`
 - **`group_members`**: `id`, `group_id`, `user_id`, `joined_at`
 - **`expenses`**: `id`, `group_id`, `paid_by`, `description`, `amount`, `category`, `split_type`, `expense_date`

@@ -1,9 +1,17 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for
+from flask import Blueprint, render_template, request, flash, redirect, url_for, abort
 from flask_login import login_required, current_user
 from app.extensions import db
 from app.models.user import User
 
 users_bp = Blueprint("users", __name__, url_prefix="/users")
+
+
+def _require_admin():
+    """Redirect with a flash message if the current user is not an admin."""
+    if not current_user.is_admin:
+        flash("Access denied. Only administrators can manage user accounts.", "danger")
+        return redirect(url_for("users.list_users"))
+    return None
 
 
 @users_bp.route("")
@@ -28,6 +36,10 @@ def list_users():
 @users_bp.route("/<int:user_id>/edit", methods=["GET", "POST"])
 @login_required
 def edit_user(user_id):
+    denied = _require_admin()
+    if denied:
+        return denied
+
     user = db.session.get(User, user_id)
     if not user:
         flash("User not found.", "danger")
@@ -51,6 +63,8 @@ def edit_user(user_id):
         user.name = name
         user.email = email
 
+        # Only admin can reset passwords — field is admin-only in template, but
+        # we guard server-side too for safety.
         if password:
             if len(password) < 6:
                 flash("Password must be at least 6 characters long.", "danger")
@@ -67,6 +81,10 @@ def edit_user(user_id):
 @users_bp.route("/<int:user_id>/delete", methods=["POST"])
 @login_required
 def delete_user(user_id):
+    denied = _require_admin()
+    if denied:
+        return denied
+
     user = db.session.get(User, user_id)
     if not user:
         flash("User not found.", "danger")

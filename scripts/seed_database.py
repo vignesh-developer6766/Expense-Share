@@ -36,6 +36,9 @@ def seed():
             db.session.add(u)
             users[name] = u
 
+        # Vignesh is the super-admin
+        users["Vignesh"].is_admin = True
+
         db.session.commit()
 
         print("Creating groups: College Trip, Roommates, Friends...")
