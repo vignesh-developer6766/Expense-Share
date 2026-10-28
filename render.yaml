@@ -7,10 +7,6 @@ services:
     branch: main
     autoDeploy: true
     healthCheckPath: /health
-    disk:
-      name: expenseshare-data
-      mountPath: /app/instance
-      sizeGB: 1
     envVars:
       - key: FLASK_ENV
         value: production
