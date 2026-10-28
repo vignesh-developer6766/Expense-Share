@@ -1,0 +1,14 @@
+# Netlify Configuration for ExpenseShare AI
+# Proxies traffic from Netlify CDN/custom domain to the persistent container backend service
+
+[build]
+  publish = "app/static"
+
+# Route API and dynamic pages to the persistent backend container
+# Replace https://expenseshare-ai.onrender.com with your deployed backend URL
+[[redirects]]
+  from = "/*"
+  to = "https://expenseshare-ai.onrender.com/:splat"
+  status = 200
+  force = true
+  headers = {X-From = "Netlify"}

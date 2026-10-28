@@ -14,9 +14,12 @@ class Config:
     WTF_CSRF_ENABLED = True
 
     # Database
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
+    _db_url = os.environ.get(
         "DATABASE_URL", f"sqlite:///{os.path.join(BASE_DIR, 'instance', 'expenseshare.db')}"
     )
+    if _db_url and _db_url.startswith("postgres://"):
+        _db_url = _db_url.replace("postgres://", "postgresql://", 1)
+    SQLALCHEMY_DATABASE_URI = _db_url
 
 
 class DevelopmentConfig(Config):
