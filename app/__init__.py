@@ -96,4 +96,35 @@ def create_app(config_name=None):
     def health_check():
         return jsonify({"status": "healthy", "service": "ExpenseShare AI"}), 200
 
+    # Configure Trusted Proxy & ProxyFix middleware
+    trusted_hosts = flask_app.config.get("TRUSTED_HOSTS", [])
+
+    class TrustedProxyFix:
+        def __init__(self, wsgi_app, hosts):
+            self.wsgi_app = wsgi_app
+            self.trusted_hosts = set(hosts)
+
+        def __call__(self, environ, start_response):
+            orig_host = environ.get("HTTP_X_ORIGINAL_HOST") or environ.get("HTTP_X_FORWARDED_HOST")
+            if orig_host:
+                for candidate in [h.strip() for h in orig_host.split(",")]:
+                    host_only = candidate.split(":")[0]
+                    if host_only in self.trusted_hosts:
+                        environ["HTTP_HOST"] = candidate
+                        break
+
+            proto = environ.get("HTTP_X_FORWARDED_PROTO")
+            if proto:
+                first_proto = [p.strip() for p in proto.split(",")][0]
+                if first_proto in ("http", "https"):
+                    environ["wsgi.url_scheme"] = first_proto
+
+            return self.wsgi_app(environ, start_response)
+
+    from werkzeug.middleware.proxy_fix import ProxyFix
+    flask_app.wsgi_app = TrustedProxyFix(
+        ProxyFix(flask_app.wsgi_app, x_for=1, x_proto=1, x_host=0, x_port=1, x_prefix=1),
+        trusted_hosts,
+    )
+
     return flask_app

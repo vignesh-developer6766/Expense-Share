@@ -4,11 +4,11 @@
 [build]
   publish = "app/static"
 
-# Route API and dynamic pages to the persistent backend container
-# Replace https://expenseshare-ai.onrender.com with your deployed backend URL
+# Route all pages and API to the Render backend container with proxy headers
 [[redirects]]
   from = "/*"
   to = "https://expenseshare-ai.onrender.com/:splat"
   status = 200
   force = true
-  headers = {X-From = "Netlify"}
+  headers = {X-From = "Netlify", X-Forwarded-Host = "expenseshare-ai-vignesh.netlify.app", X-Forwarded-Proto = "https", X-Original-Host = "expenseshare-ai-vignesh.netlify.app"}
+
